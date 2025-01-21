@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "318813019092",
+    "project_id": "tareafinalmoviles",
+    "storage_bucket": "tareafinalmoviles.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:318813019092:android:6da450aeb8490cdbdf1441",
+        "android_client_info": {
+          "package_name": "com.example.tarea_final_moviles"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLd1wgbPFcNzWJaPmDmrlXmuSlJpV6Vj0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
