@@ -81,6 +81,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
     // Retrofit and Gson
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
@@ -94,7 +96,7 @@ dependencies {
     kapt ("com.google.dagger:hilt-compiler:2.51.1")
     implementation ("androidx.hilt:hilt-navigation-compose:1.0.0")
     implementation ("androidx.compose.foundation:foundation:1.3.1")
-
+    implementation("com.google.android.gms:play-services-location:21.1.0")
 }
 
 

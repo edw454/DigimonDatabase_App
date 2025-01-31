@@ -1,6 +1,13 @@
 package com.example.tarea_final_moviles.RegistroInisio
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -25,18 +32,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tarea_final_moviles.Main_Structure.MainActivity
+import com.example.tarea_final_moviles.notification.NotificationClass
 import com.example.tarea_final_moviles.ui.theme.Tarea_Final_MovilesTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class RegisterActivity : ComponentActivity() {
 
     private lateinit var auth: FirebaseAuth
+    private var db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        NotificationClass(this).createNotificationChannel()
+        //createNotificationChannel()
         setContent {
             auth = FirebaseAuth.getInstance()
+            db = FirebaseFirestore.getInstance()
             Tarea_Final_MovilesTheme {
                 Column (Modifier.fillMaxSize()
                     .padding(48.dp),
@@ -61,13 +77,36 @@ class RegisterActivity : ComponentActivity() {
                 }
             }
         }
+
     }
 
     private fun registerUser(email: String, password: String) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this){task ->
                 if (task.isSuccessful){
+
+                    val user = auth.currentUser
+                    val uid = user?.uid
+                    val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss",
+                        Locale.getDefault()).format(Date())
+
+                    val userData = hashMapOf(
+                        "uid" to uid,
+                        "register_time" to currentTime,
+                        "last_login" to currentTime
+                    )
+                    if (uid != null) {
+                        db.collection("users").document(uid).set(userData)
+                            .addOnSuccessListener {
+                                println("User registered and data saved.")
+                            }
+                            .addOnFailureListener { e ->
+                                println("Error saving data: $e")
+                            }
+                    }
+
                     Toast.makeText(this, "Usuario creado correctamente", Toast.LENGTH_SHORT).show()
+                    NotificationClass(this).generateNotification("Registro exitoso", "Usuario creado correctamente")
                     val intent = Intent(this, MainActivity::class.java)
                     startActivity(intent)
                     finish()
@@ -76,6 +115,7 @@ class RegisterActivity : ComponentActivity() {
                 }
             }
     }
+
 }
 
 private fun checkEmpty(email: String, password: String, passwordConfirm: String): Boolean {
@@ -143,35 +183,3 @@ fun registerPreview() {
         }
     }
 }
-/*class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Tarea_Final_MovilesTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Tarea_Final_MovilesTheme {
-        Greeting("Android")
-    }
-}*/

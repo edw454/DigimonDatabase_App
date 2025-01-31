@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">Tarea_Final_Moviles</string>
+    <string name="app_name">Digimon DataBase</string>
+    <string name="channel_name">DigimonDataBase</string>
+    <string name="channel_description">App que contiene las cartas de BT01-03</string>
+    <string name="channel_id">id_Digimon_Database</string>
 </resources>

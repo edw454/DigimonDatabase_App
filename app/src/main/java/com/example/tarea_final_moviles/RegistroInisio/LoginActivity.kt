@@ -25,17 +25,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tarea_final_moviles.Main_Structure.MainActivity
+import com.example.tarea_final_moviles.notification.NotificationClass
 import com.example.tarea_final_moviles.ui.theme.Tarea_Final_MovilesTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class LoginActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
+    private var db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             auth = FirebaseAuth.getInstance()
+            db = FirebaseFirestore.getInstance()
             Tarea_Final_MovilesTheme {
                 Column (
                     Modifier.fillMaxSize()
@@ -65,7 +72,29 @@ class LoginActivity : ComponentActivity() {
     private fun logUser(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this){task ->
-                if (task.isSuccessful){
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    val uid = user?.uid
+                    val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                    if (uid != null) {
+                        val userRef = db.collection("users").document(uid)
+                        userRef.get()
+                            .addOnSuccessListener { document ->
+                                if (document != null) {
+                                    val lastLogin = document.getString("last_login")
+                                    NotificationClass(this).generateNotification("Last login time: ", "$lastLogin")
+
+                                    userRef.update("last_login", currentTime)
+                                        .addOnSuccessListener {
+                                            println("Last login time updated.")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            println("Error updating last login time: $e")
+                                        }
+                                }
+                            }
+                    }
+                            Toast.makeText(this, "Usuario creado correctamente", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, MainActivity::class.java)
                     startActivity(intent)
                     finish()
