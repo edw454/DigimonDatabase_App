@@ -1,11 +1,11 @@
 package com.example.tarea_final_moviles.Main_Structure
 
-import android.graphics.drawable.Icon
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,23 +13,22 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,24 +55,48 @@ class MainActivity : ComponentActivity(){
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            //val viewModel: DigimonViewModel = ViewModelProvider(this).get(DigimonViewModel::class.java)
+            ScreemMain()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ScreemMain() {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Digimon Cards",
+                        color = Color.Yellow,
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF0D47A1))
+            )
+        }
+    ) { paddingValues ->  // Se recibe el padding automático de Scaffold
+        Column(modifier = Modifier.padding(paddingValues)
+            .background(Color(0xFF80DAEB))) {
             CardList()
         }
     }
+}
 
-    @Composable
+@Composable
     fun CardList(
         viewModel: DigimonViewModel = hiltViewModel()
     ) {
-        val _digimonList by viewModel.digimonList.collectAsState()
-        Log.d("Cantidad de cartas","${_digimonList.size}")
+        val digimonList by viewModel.digimonList.collectAsState()
+        Log.d("Cantidad de cartas","${digimonList.size}")
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
             modifier = Modifier.padding(4.dp)
         ) {
            //Colum {
-                items(_digimonList) { card ->
+                items(digimonList) { card ->
                     DigimonCard(card)
                 }
 
@@ -114,9 +137,9 @@ class MainActivity : ComponentActivity(){
                         Row (
                             modifier = Modifier.padding(4.dp)
                         ){
-                            infoRow(title = "Id", value = card.id, size = true, color = titleColor)
+                            InfoRow(title = "Id", value = card.id, size = true, color = titleColor)
                             Spacer( modifier = Modifier.padding(4.dp))
-                            infoRow(title = "Nivel", value = card.level?.toString() ?: "N/A", size = true, color = titleColor)
+                            InfoRow(title = "Nivel", value = card.level?.toString() ?: "N/A", size = true, color = titleColor)
                         }
                     }
                 },
@@ -126,6 +149,7 @@ class MainActivity : ComponentActivity(){
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(260.dp)
+                                .background(Color.Transparent)
                                 .verticalScroll(rememberScrollState())
                         ){
                             Row {
@@ -134,25 +158,25 @@ class MainActivity : ComponentActivity(){
                                     contentDescription = card.name,
                                     contentScale = ContentScale.FillBounds,
                                     modifier = Modifier
-                                        .width(100.dp) // Ancho personalizado
+                                        .width(110.dp) // Ancho personalizado
                                         .height(150.dp) // Ajustar proporción de la imagen si es necesario
                                 )
                                 Column(
                                     modifier = Modifier.padding(6.dp)
                                 ){
-                                    infoRow(title = "Color", value = card.color, color = titleColor)
-                                    infoRow(title = "Tipo", value = card.digi_type ?: "N/A", color = titleColor)
-                                    infoRow(title = "Coste", value = card.play_cost.toString(), color = titleColor)
-                                    infoRow(title = "Color Evolutivo", value = card.evolution_color ?: "N/A", color = titleColor)
-                                    infoRow(title = "Coste Evolucion", value = card.evolution_cost?.toString() ?: "N/A", color = titleColor)
-                                    infoRow(title = "DP", value = card.dp?.toString() ?: "N/A", color = titleColor)
+                                    InfoRow(title = "Color", value = card.color, color = titleColor)
+                                    InfoRow(title = "Tipo", value = card.digi_type ?: "N/A", color = titleColor)
+                                    InfoRow(title = "Coste", value = card.play_cost.toString(), color = titleColor)
+                                    InfoRow(title = "Color Evolutivo", value = card.evolution_color ?: "N/A", color = titleColor)
+                                    InfoRow(title = "Coste Evolucion", value = card.evolution_cost?.toString() ?: "N/A", color = titleColor)
+                                    InfoRow(title = "DP", value = card.dp?.toString() ?: "N/A", color = titleColor)
                                 }
                             }
                             Spacer(
                                 modifier = Modifier.padding(4.dp)
                             )
                             card.main_effect?.let { Text(text = it) }
-                            card.source_effect?.takeIf { it.isNotEmpty() }?.let { Text(text = "Inherited Effect " + it) }
+                            card.source_effect?.takeIf { it.isNotEmpty() && card.type == "Digimon"}?.let { Text(text = "Inherited Effect $it") }
 
                         }
                     }
@@ -180,7 +204,7 @@ class MainActivity : ComponentActivity(){
     }
 
     @Composable
-    fun infoRow(title: String, value: String, size: Boolean = false, color: Color = Color.Black) {
+    fun InfoRow(title: String, value: String, size: Boolean = false, color: Color = Color.Black) {
         Row(
             modifier = Modifier.padding(vertical = 2.dp) // Espaciado entre filas
         ) {
@@ -296,6 +320,12 @@ class MainActivity : ComponentActivity(){
 
     @Preview(showBackground = true, widthDp = 360, heightDp = 640)
     @Composable
+    fun PreviewScreen() {
+        ScreemMain()
+    }
+
+    @Preview(showBackground = true, widthDp = 360, heightDp = 640)
+    @Composable
     fun PreviewAlertDialogDoc() {
         val sampleCard = CardsItem(
             alt_effect = "Alternate effect example",
@@ -325,21 +355,3 @@ class MainActivity : ComponentActivity(){
     }
 
 
-    /*@Composable
-    fun CardItem(card: CardsItem) {
-        val imageUrl = "https://images.digimoncard.io/images/cards/${card.id}.jpg"
-
-        Column {
-            Text(text = card.id)
-            Text(text = card.name)
-            Text(text = card.color)
-            card.main_effect?.let { Text(text = it) }
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = card.name,
-
-            )
-        }
-    }*/
-
-}

@@ -1,11 +1,15 @@
 package com.example.tarea_final_moviles.RegistroInisio
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,54 +42,77 @@ import java.util.Locale
 class LoginActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private var db = FirebaseFirestore.getInstance()
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            auth = FirebaseAuth.getInstance()
-            db = FirebaseFirestore.getInstance()
             Tarea_Final_MovilesTheme {
                 Column (
                     Modifier.fillMaxSize()
-                    .padding(48.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally){
-                    Text("Iniciar Sesión",
-                        Modifier.padding(bottom = 16.dp),
-                        style = TextStyle(fontSize = 24.sp)
-                    )
-                    val email = loginEmail()
-                    val password = loginPassword()
-                    Button(onClick = {
-                        if (checkEmpty(email, password)){
-                            logUser(email, password)
-                        }
-                    })
-                    { Text("Iniciar sesión") }
-
-                    Button(onClick = {val intent = Intent(this@LoginActivity, RegisterActivity::class.java)
-                        startActivity(intent) })
-                    { Text("Crear Cuenta") }
+                        .background(Color(0xFF80DAEB))
+                ){
+                    ScreenLogin()
                 }
             }
         }
     }
 
-    private fun logUser(email: String, password: String) {
+    @Composable
+    fun ScreenLogin() {
+        val context = LocalContext.current
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
+            Column (
+                Modifier.fillMaxSize()
+                    .padding(48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally){
+                Text("Iniciar Sesión",
+                    Modifier.padding(bottom = 16.dp),
+                    style = TextStyle(fontSize = 24.sp)
+                )
+                val email = loginEmail()
+                val password = loginPassword()
+                Button(onClick = {
+                    if (checkEmpty(email, password)){
+                        logUser(email, password, context)
+                    }
+                })
+                { Text("Iniciar sesión") }
+
+                Button(onClick = {val intent = Intent(this@LoginActivity, RegisterActivity::class.java)
+                    startActivity(intent) })
+                { Text("Crear Cuenta") }
+            }
+
+    }
+    private fun logUser(email: String, password: String, context: Context) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this){task ->
                 if (task.isSuccessful) {
+
                     val user = auth.currentUser
                     val uid = user?.uid
                     val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
                     if (uid != null) {
+                        // Si el UID no es nulo, obtenemos el documento del usuario
                         val userRef = db.collection("users").document(uid)
                         userRef.get()
+                            // Si el documento existe, actualizamos el campo "last_login"
                             .addOnSuccessListener { document ->
                                 if (document != null) {
                                     val lastLogin = document.getString("last_login")
-                                    NotificationClass(this).generateNotification("Last login time: ", "$lastLogin")
-
+                                    val userName = document.getString("user_name")
+                                    NotificationClass(this).generateNotification("$userName su última sesión fue: ", "$lastLogin")
+                                    handler.post(object : Runnable {
+                                        //Se lanza la notificación cada minuto
+                                        override fun run() {
+                                            NotificationClass(context).generateNotification("Su última sesión fue: ", "$lastLogin")
+                                            // Repetir cada minuto
+                                            handler.postDelayed(this, 60 * 100)
+                                        }
+                                    })
                                     userRef.update("last_login", currentTime)
                                         .addOnSuccessListener {
                                             println("Last login time updated.")
@@ -106,8 +135,15 @@ class LoginActivity : ComponentActivity() {
 }
 
 private fun checkEmpty(email: String, password: String): Boolean {
+    //Se comprueba que los campos no estén vacíos
     return email.isNotEmpty() && password.isNotEmpty()
 }
+
+@Composable
+fun ScreenLogin() {
+
+}
+
 
 @Composable
 fun loginEmail(): String {
@@ -136,22 +172,24 @@ fun loginPassword(): String {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun loginPreview() {
+fun LoginPreview() {
     Tarea_Final_MovilesTheme {
-        Column (
-            Modifier.fillMaxSize()
-            .padding(48.dp),
-            horizontalAlignment = Alignment.CenterHorizontally){
-            Text("Iniciar Sesión",
-                Modifier.padding(bottom = 16.dp),
-                style = TextStyle(fontSize = 24.sp)
-            )
-            loginEmail()
-            loginPassword()
-            Button(onClick = {/*TODO*/ })
-            { Text("Crear Cuenta") }
-            Button(onClick = { /*TODO*/ })
-            { Text("Iniciar sesión") }
-        }
+       Column(
+           Modifier.fillMaxSize()
+               .padding(48.dp),
+           horizontalAlignment = Alignment.CenterHorizontally
+       ){
+           Text("Iniciar Sesión",
+               Modifier.padding(bottom = 16.dp),
+               style = TextStyle(fontSize = 24.sp)
+           )
+           loginEmail()
+           loginPassword()
+           Button(onClick = {/*TODO*/
+           })
+           { Text("Iniciar sesión") }
+           Button(onClick = { /*TODO*/
+           }){Text("Crear Cuenta")}
+       }
     }
 }
