@@ -1,6 +1,8 @@
 package com.example.tarea_final_moviles.Main_Structure
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -45,24 +47,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.tarea_final_moviles.notification.NotificationClass
 import com.example.tarea_final_moviles.retrofit.model.CardsItem
 import com.example.tarea_final_moviles.retrofit.model.DigimonViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity(){
+    private val handler = Handler(Looper.getMainLooper()) // Handler para manejar el Runnable
+    private var isDialogOpen = false // Variable para controlar si el diálogo está abierto
+    private val notificationRunnable = object : Runnable {
+        override fun run() {
+            if (!isDialogOpen) { // Solo envía la notificación si no hay un diálogo abierto
+                NotificationClass(this@MainActivity).generateNotification("¿Estas ahí?", "Consulta una carta")
+            }
+            handler.postDelayed(this, 60 * 100) // Repite cada minuto
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ScreemMain()
+            ScreemMain(::setDialogOpenState)
         }
+        handler.post(notificationRunnable) // Iniciar el Runnable
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(notificationRunnable) // Eliminar el Runnable cuando la actividad se destruya
+    }
+
+    // Función para actualizar el estado del diálogo
+    private fun setDialogOpenState(isOpen: Boolean) {
+        isDialogOpen = isOpen
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScreemMain() {
+private fun ScreemMain(setDialogOpenState: (Boolean) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -79,13 +102,14 @@ private fun ScreemMain() {
     ) { paddingValues ->  // Se recibe el padding automático de Scaffold
         Column(modifier = Modifier.padding(paddingValues)
             .background(Color(0xFF80DAEB))) {
-            CardList()
+            CardList(setDialogOpenState)
         }
     }
 }
 
 @Composable
     fun CardList(
+        setDialogOpenState: (Boolean) -> Unit,
         viewModel: DigimonViewModel = hiltViewModel()
     ) {
         val digimonList by viewModel.digimonList.collectAsState()
@@ -95,12 +119,9 @@ private fun ScreemMain() {
             columns = GridCells.Fixed(4),
             modifier = Modifier.padding(4.dp)
         ) {
-           //Colum {
-                items(digimonList) { card ->
-                    DigimonCard(card)
-                }
-
-           // }
+            items(digimonList) { card ->
+                DigimonCard(card, setDialogOpenState)
+            }
         }
     }
 
@@ -232,18 +253,27 @@ private fun ScreemMain() {
     @Composable
     fun DigimonCard(
         card: CardsItem,
+        setDialogOpenState: (Boolean) -> Unit,
         modifier: Modifier = Modifier
     ) {
         var showDialog by remember { mutableStateOf(false) }
         val imageUrl = "https://images.digimoncard.io/images/cards/${card.id}.jpg"
 
-        Card(onClick = { showDialog = true },
+        Card(onClick = {
+            setDialogOpenState(true)
+            showDialog = true
+                       },
             shape = MaterialTheme.shapes.medium,
             modifier = modifier.fillMaxWidth()
                 .padding(4.dp)) {
                 Row {
                     if (showDialog) {
-                        AlertDialogDoc(onDismiss = { showDialog = false }, card, imageUrl)
+                        AlertDialogDoc(
+                            onDismiss = {
+                                showDialog = false
+                                setDialogOpenState(false)
+                                        }, card, imageUrl
+                        )
                     }
 
                     AsyncImage(
@@ -280,7 +310,7 @@ private fun ScreemMain() {
             source_effect = "When attacking, gain 1 memory.",
             type = "Rookie"
         )
-        DigimonCard(card = sampleCard)
+        DigimonCard(card = sampleCard, setDialogOpenState = {})
     }
 
     // Preview para CardList
@@ -313,7 +343,7 @@ private fun ScreemMain() {
             modifier = Modifier.padding(4.dp)
         ) {
             items(sampleList) { card ->
-                DigimonCard(card)
+                DigimonCard(card, setDialogOpenState = {})
             }
         }
     }
@@ -321,7 +351,7 @@ private fun ScreemMain() {
     @Preview(showBackground = true, widthDp = 360, heightDp = 640)
     @Composable
     fun PreviewScreen() {
-        ScreemMain()
+        ScreemMain( setDialogOpenState = {})
     }
 
     @Preview(showBackground = true, widthDp = 360, heightDp = 640)

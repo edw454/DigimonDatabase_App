@@ -1,10 +1,7 @@
 package com.example.tarea_final_moviles.RegistroInisio
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,7 +38,6 @@ import java.util.Locale
 class LoginActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private var db = FirebaseFirestore.getInstance()
-    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +56,6 @@ class LoginActivity : ComponentActivity() {
 
     @Composable
     fun ScreenLogin() {
-        val context = LocalContext.current
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
             Column (
@@ -76,7 +70,7 @@ class LoginActivity : ComponentActivity() {
                 val password = loginPassword()
                 Button(onClick = {
                     if (checkEmpty(email, password)){
-                        logUser(email, password, context)
+                        logUser(email, password)
                     }
                 })
                 { Text("Iniciar sesión") }
@@ -87,11 +81,10 @@ class LoginActivity : ComponentActivity() {
             }
 
     }
-    private fun logUser(email: String, password: String, context: Context) {
+    private fun logUser(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this){task ->
                 if (task.isSuccessful) {
-
                     val user = auth.currentUser
                     val uid = user?.uid
                     val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
@@ -105,14 +98,14 @@ class LoginActivity : ComponentActivity() {
                                     val lastLogin = document.getString("last_login")
                                     val userName = document.getString("user_name")
                                     NotificationClass(this).generateNotification("$userName su última sesión fue: ", "$lastLogin")
-                                    handler.post(object : Runnable {
+                                    /*handler.post(object : Runnable {
                                         //Se lanza la notificación cada minuto
                                         override fun run() {
                                             NotificationClass(context).generateNotification("Su última sesión fue: ", "$lastLogin")
                                             // Repetir cada minuto
                                             handler.postDelayed(this, 60 * 100)
                                         }
-                                    })
+                                    })*/
                                     userRef.update("last_login", currentTime)
                                         .addOnSuccessListener {
                                             println("Last login time updated.")
@@ -138,12 +131,6 @@ private fun checkEmpty(email: String, password: String): Boolean {
     //Se comprueba que los campos no estén vacíos
     return email.isNotEmpty() && password.isNotEmpty()
 }
-
-@Composable
-fun ScreenLogin() {
-
-}
-
 
 @Composable
 fun loginEmail(): String {
